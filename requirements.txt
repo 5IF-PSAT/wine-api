@@ -1,0 +1,12 @@
+Django>=3.2,<3.3
+djangorestframework==3.13.1
+django-cors-headers==3.11.0
+django-filter==21.1
+django-dbbackup==3.3.0
+django-cleanup==6.0.0
+psycopg2==2.9.3
+pytz==2022.7
+django-rest-swagger>=2.2.0, <2.3.0
+drf-yasg==1.21.5
+django-redis==5.0.0
+pandas
