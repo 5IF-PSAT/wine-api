@@ -10,3 +10,4 @@ django-rest-swagger>=2.2.0, <2.3.0
 drf-yasg==1.21.5
 django-redis==5.0.0
 pandas
+nixtlats

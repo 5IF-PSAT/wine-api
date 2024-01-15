@@ -9,16 +9,14 @@ class WineManager(models.Manager):
 
     def create_wine(self, **data):
         try:
-            wine_id = data["wine_id"]
             name = data["wine_name"]
             type = data["type"]
             winery = data["winery"]
             region = data["region"]
         except KeyError:
-            raise exceptions.ValidationError("Missing required fields: wine_id, wine_name, type, winery, region")
-        if self.filter(wine_id=wine_id).exists():
-            raise exceptions.ValidationError("Wine already exists")
-        wine = self.create(wine_id=wine_id, wine_name=name, type=type,
+            raise exceptions.ValidationError("Missing required fields: wine_name, type, winery, region")
+        wine = self.create(wine_id=data.get("wine_id", None),  # wine_id is optional
+                           wine_name=name, type=type,
                            elaborate=data["elaborate"], abv=data["abv"], body=data["body"],
                            acidity=data["acidity"], winery=winery, region=region,
                            created_at=datetime.datetime.now())

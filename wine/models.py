@@ -8,7 +8,7 @@ class Wine(BaseEntity):
         db_table = "wine"
         ordering = ["id"]
 
-    wine_id = models.IntegerField(db_column="WineID", editable=False, unique=True, serialize=True)
+    wine_id = models.IntegerField(db_column="WineID", null=True)
     wine_name = models.CharField(max_length=255, db_column="WineName", serialize=True)
     type = models.CharField(max_length=255, db_column="Type", serialize=True)
     elaborate = models.CharField(max_length=255, db_column="Elaborate", serialize=True)

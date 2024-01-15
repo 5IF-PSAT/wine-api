@@ -5,7 +5,7 @@ from winery.models import Winery
 class WinerySerializer(serializers.ModelSerializer):
     class Meta:
         model = Winery
-        fields = '__all__'
+        fields = ['id', 'winery_name', 'website']
         read_only_fields = ('id',)
 
     def create(self, validated_data):

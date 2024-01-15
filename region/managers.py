@@ -13,15 +13,13 @@ class RegionManager(models.Manager):
 
     def create_region(self, **data):
         try:
-            region_id = data["region_id"]
             name = data["region_name"]
             country = data["country"]
         except KeyError:
-            raise exceptions.ValidationError("Missing required fields: region_id, region_name, country")
-        if self.filter(region_id=region_id).exists():
-            raise exceptions.ValidationError("Region already exists")
+            raise exceptions.ValidationError("Missing required fields: region_name, country")
 
-        region = self.create(region_id=region_id, region_name=name, country=country,
+        region = self.create(region_id=data.get("region_id", None),  # region_id is optional
+                             region_name=name, country=country,
                              code=data["code"], latitude=data["latitude"], longitude=data["longitude"],
                              created_at=datetime.datetime.now())
         return region

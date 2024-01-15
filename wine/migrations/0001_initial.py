@@ -21,7 +21,7 @@ class Migration(migrations.Migration):
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('created_at', models.DateTimeField(auto_now_add=True, null=True, serialize=True)),
                 ('updated_at', models.DateTimeField(auto_now=True, null=True, serialize=True)),
-                ('wine_id', models.IntegerField(db_column='WineID', editable=False, unique=True, serialize=True)),
+                ('wine_id', models.IntegerField(db_column='WineID', null=True)),
                 ('wine_name', models.CharField(db_column='WineName', max_length=255, serialize=True)),
                 ('type', models.CharField(db_column='Type', max_length=255, serialize=True)),
                 ('elaborate', models.CharField(db_column='Elaborate', max_length=255, serialize=True)),

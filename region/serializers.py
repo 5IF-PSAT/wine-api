@@ -5,7 +5,7 @@ from region.models import Region
 class RegionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Region
-        fields = '__all__'
+        fields = ['id', 'region_name', 'country', 'code', 'latitude', 'longitude']
         read_only_fields = ('id',)
 
     def create(self, validated_data):

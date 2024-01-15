@@ -8,7 +8,7 @@ class Winery(BaseEntity):
         db_table = "winery"
         ordering = ["id"]
 
-    winery_id = models.IntegerField(db_column="WineryID", editable=False, unique=True, serialize=True)
+    winery_id = models.IntegerField(db_column="WineryID", null=True)
     winery_name = models.CharField(max_length=255, db_column="WineryName", serialize=True)
     website = models.CharField(max_length=255, db_column="Website", serialize=True)
     objects = WineryManager()

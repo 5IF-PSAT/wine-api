@@ -8,7 +8,7 @@ class Region(BaseEntity):
         db_table = "region"
         ordering = ["id"]
 
-    region_id = models.IntegerField(db_column="RegionID", editable=False, unique=True, serialize=True)
+    region_id = models.IntegerField(db_column="RegionID", null=True)
     region_name = models.CharField(max_length=255, db_column="RegionName", serialize=True)
     country = models.CharField(max_length=255, db_column="Country", serialize=True)
     code = models.CharField(max_length=255, db_column="Code", serialize=True)

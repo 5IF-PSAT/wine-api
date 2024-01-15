@@ -42,6 +42,8 @@ services:
     volumes:
       - .:/app
       - ./logs:/app/logs
+      - ./db_data:/app/db_data
+      - ./model_data:/app/model_data
     depends_on:
       - postgres
       - redis

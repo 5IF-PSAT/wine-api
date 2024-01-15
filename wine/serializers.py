@@ -7,7 +7,8 @@ from region.models import Region
 class WineSerializer(serializers.ModelSerializer):
     class Meta:
         model = Wine
-        fields = '__all__'
+        fields = ['id', 'wine_name', 'type', 'elaborate', 'abv',
+                  'body', 'acidity', 'winery', 'region']
         read_only_fields = ('id',)
 
     def create(self, validated_data):

@@ -13,16 +13,13 @@ class WineryManager(models.Manager):
 
     def create_winery(self, **data):
         try:
-            winery_id = data["winery_id"]
             name = data["winery_name"]
         except KeyError:
-            raise exceptions.ValidationError("Missing required fields: winery_id, winery_name")
+            raise exceptions.ValidationError("Missing required fields: winery_name")
 
-        if self.filter(winery_id=winery_id).exists():
-            raise exceptions.ValidationError("Winery already exists")
-
-        winery = self.create(winery_id=winery_id, winery_name=name, website=data.get("website", ""),
-                                created_at=datetime.datetime.now())
+        winery = self.create(winery_id=data.get("winery_id", None),  # winery_id is optional
+                             winery_name=name, website=data.get("website", ""),
+                             created_at=datetime.datetime.now())
         return winery
 
     def get_wineries(self):

@@ -68,6 +68,7 @@ INSTALLED_APPS = [
     "wine.apps.WineConfig",
     "winery.apps.WineryConfig",
     "region.apps.RegionConfig",
+    "predict.apps.PredictConfig",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -123,7 +124,7 @@ REST_FRAMEWORK = {
         "rest_framework.filters.OrderingFilter",
     ),
     "DEFAULT_PERMISSION_CLASSES": (
-        "rest_framework.permissions.IsAuthenticated",
+        "rest_framework.permissions.AllowAny",
     ),
     "DEFAULT_SCHEMA_CLASS": "rest_framework.schemas.coreapi.AutoSchema",
     "DEFAULT_AUTHENTICATION_CLASSES": [
