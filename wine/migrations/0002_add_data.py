@@ -1,5 +1,6 @@
 from django.db import migrations
 import pandas as pd
+from wine_api.settings import BASE_DIR
 
 
 def fill_wine_data(apps, schema_editor):
@@ -8,7 +9,7 @@ def fill_wine_data(apps, schema_editor):
     Wine = apps.get_model('wine', 'Wine')
 
     # Read dataframe from parquet file
-    wines_df = pd.read_csv('./db_data/wines.csv')
+    wines_df = pd.read_csv(f'{BASE_DIR}/db_data/wines.csv')
 
     # Rename columns to match model fields
     wines_df.rename(columns={'WineID': 'wine_id', 'WineName': 'wine_name', 'Type': 'type',

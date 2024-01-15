@@ -1,12 +1,13 @@
 from django.db import migrations
 import pandas as pd
+from wine_api.settings import BASE_DIR
 
 
 def fill_region_data(apps, schema_editor):
     Region = apps.get_model('region', 'Region')
 
     # Read dataframe from parquet file
-    regions_df = pd.read_parquet('./db_data/regions.parquet')
+    regions_df = pd.read_parquet(f'{BASE_DIR}/db_data/regions.parquet')
 
     # Rename columns to match model fields
     regions_df.rename(columns={'RegionID': 'region_id', 'RegionName': 'region_name', 'Country': 'country',

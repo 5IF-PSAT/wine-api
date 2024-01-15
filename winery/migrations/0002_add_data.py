@@ -1,12 +1,13 @@
 from django.db import migrations
 import pandas as pd
+from wine_api.settings import BASE_DIR
 
 
 def fill_winery_data(apps, schema_editor):
     Winery = apps.get_model('winery', 'Winery')
 
     # Read pandas dataframe from csv file
-    wineries_df = pd.read_csv('./db_data/wineries.csv')
+    wineries_df = pd.read_csv(f'{BASE_DIR}/db_data/wineries.csv')
 
     # Rename columns to match model fields
     wineries_df = wineries_df.rename(columns={'WineryID': 'winery_id', 'WineryName': 'winery_name', 'Website': 'website'})
