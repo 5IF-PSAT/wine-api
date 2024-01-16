@@ -107,9 +107,9 @@ def predict_rating(request):
     # Config
     h = 12
     frequency = 'MS'
-    predict_field = ['avg_temperature', 'avg_precipitation',
-                     'avg_humidity', 'avg_soil_temperature',
-                     'avg_soil_moisture']
+    predict_field = ['avg_temperature', 'avg_sunshine_duration',
+                     'avg_precipitation', 'avg_humidity',
+                     'avg_soil_temperature', 'avg_soil_moisture']
     batch_vintage = 2023
 
     # Get wine
@@ -164,26 +164,26 @@ def predict_rating(request):
     minmax_df['Acidity'] = list_acidity
     minmax_df['Elaborate'] = list_elaborate
     minmax_df['avg_temperature'] = forecast_df[0]['TimeGPT'].tolist()
-    minmax_df['avg_sunshine_duration'] = [0] * h
-    minmax_df['avg_precipitation'] = forecast_df[1]['TimeGPT'].tolist()
+    minmax_df['avg_sunshine_duration'] = forecast_df[1]['TimeGPT'].tolist()
+    minmax_df['avg_precipitation'] = forecast_df[2]['TimeGPT'].tolist()
     minmax_df['avg_rain'] = [0] * h
     minmax_df['avg_snowfall'] = [0] * h
-    minmax_df['avg_humidity'] = forecast_df[2]['TimeGPT'].tolist()
+    minmax_df['avg_humidity'] = forecast_df[3]['TimeGPT'].tolist()
     minmax_df['avg_wind_speed'] = [0] * h
-    minmax_df['avg_soil_temperature'] = forecast_df[3]['TimeGPT'].tolist()
-    minmax_df['avg_soil_moisture'] = forecast_df[4]['TimeGPT'].tolist()
+    minmax_df['avg_soil_temperature'] = forecast_df[4]['TimeGPT'].tolist()
+    minmax_df['avg_soil_moisture'] = forecast_df[5]['TimeGPT'].tolist()
 
     acid_dict = {'Low': 1, 'Medium': 2, 'High': 3}
     body_dict = {'Light-bodied': 1, 'Medium-bodied': 2, 'Full-bodied': 3, 'Very full-bodied': 4}
     elaborate_dict = {'Varietal/100%': 1, 'Varietal/>75%': 2, 'Assemblage/Blend': 3,
-                     'Assemblage/Meritage Red Blend': 4, 'Assemblage/Rhône Red Blend': 5,
-                     'Assemblage/Bordeaux Red Blend': 6,
-                     'Assemblage/Portuguese White Blend': 7, 'Assemblage/Portuguese Red Blend': 8,
-                     'Assemblage/Port Blend': 9,
-                     'Assemblage/Provence Rosé Blend': 10, 'Assemblage/Champagne Blend': 11,
-                     'Assemblage/Valpolicella Red Blend': 12,
-                     'Assemblage/Tuscan Red Blend': 13, 'Assemblage/Rioja Red Blend': 14, 'Assemblage/Cava Blend': 15
-                     }
+                      'Assemblage/Meritage Red Blend': 4, 'Assemblage/Rhône Red Blend': 5,
+                      'Assemblage/Bordeaux Red Blend': 6,
+                      'Assemblage/Portuguese White Blend': 7, 'Assemblage/Portuguese Red Blend': 8,
+                      'Assemblage/Port Blend': 9,
+                      'Assemblage/Provence Rosé Blend': 10, 'Assemblage/Champagne Blend': 11,
+                      'Assemblage/Valpolicella Red Blend': 12,
+                      'Assemblage/Tuscan Red Blend': 13, 'Assemblage/Rioja Red Blend': 14, 'Assemblage/Cava Blend': 15
+                      }
 
     minmax_df['Acidity'] = minmax_df['Acidity'].map(acid_dict)
     minmax_df['Body'] = minmax_df['Body'].map(body_dict)
@@ -202,23 +202,24 @@ def predict_rating(request):
     scaled_minmax_df = minmax_scaler.transform(minmax_df)
     scaled_list_delta_time_rating = standard_scaler.transform(np.array(list_delta_time_rating).reshape(-1, 1))
 
-    list_all = []
-    for i in range(0, 12, h):
-        time_series_array = np.array([np.array(scaled_minmax_df[:, 4]), np.array(scaled_minmax_df[:, 6]),
-                                      np.array(scaled_minmax_df[:, 9]),
-                                      np.array(scaled_minmax_df[:, 11]),
-                                      np.array(scaled_minmax_df[:, 12])])
-        numerical_array = np.array([scaled_minmax_df[:, 1][i], scaled_minmax_df[:, 2][i],
-                                    scaled_minmax_df[:, 3][i],
-                                    scaled_list_delta_time_rating[i][0]])
-        list_all.append((time_series_array, numerical_array))
+    time_series_array = np.array([scaled_minmax_df[:, 4][0:12],
+                                  scaled_minmax_df[:, 5][0:12],
+                                  scaled_minmax_df[:, 6][0:12],
+                                  scaled_minmax_df[:, 9][0:12],
+                                  scaled_minmax_df[:, 11][0:12],
+                                  scaled_minmax_df[:, 12][0:12]])
+    numerical_array = np.array([scaled_minmax_df[:, 1][0], scaled_minmax_df[:, 2][0],
+                                scaled_minmax_df[:, 3][0],
+                                scaled_list_delta_time_rating[0][0]])
+    list_all = [(time_series_array, numerical_array)]
 
     # Input data for CNN model
     time_series_input = np.array([element[0] for element in list_all])
     time_series_input = time_series_input.reshape(time_series_input.shape[0], time_series_input.shape[1],
                                                   time_series_input.shape[2], 1)
     numerical_input = np.array([element[1] for element in list_all])
-    cnn_model = load_model(f'{BASE_DIR}/model/cnn_model.keras')
+    cnn_model = load_model(f'{BASE_DIR}/model/cnn_model.h5')
+    print(cnn_model.summary())
 
     # Make prediction
     predictions = cnn_model.predict([time_series_input, numerical_input])
