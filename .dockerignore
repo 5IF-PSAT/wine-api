@@ -10,6 +10,11 @@ docs/
 # temp
 tmp/
 
+db_data/
+logs/
+model/
+model_data/
+
 # IDE
 .vscode
 .idea

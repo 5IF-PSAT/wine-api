@@ -14,7 +14,7 @@ import json
 from rest_framework.permissions import AllowAny
 from wine_api.settings import BASE_DIR
 import time
-import pickle
+import joblib
 import numpy as np
 from tensorflow.keras.models import load_model
 
@@ -192,18 +192,18 @@ def predict_rating(request):
     list_delta_time_rating = [int(rating_year) - batch_vintage] * h
 
     # load minmax_scaler
-    with open(f'{BASE_DIR}/model/minmax_scaler.pickle', 'rb') as f:
-        minmax_scaler = pickle.load(f)
+    with open(f'{BASE_DIR}/model/minmax_scaler.save', 'rb') as f:
+        minmax_scaler = joblib.load(f)
 
     # load standard_scaler
-    with open(f'{BASE_DIR}/model/std_scaler.pickle', 'rb') as f:
-        standard_scaler = pickle.load(f)
+    with open(f'{BASE_DIR}/model/std_scaler.save', 'rb') as f:
+        standard_scaler = joblib.load(f)
 
     scaled_minmax_df = minmax_scaler.transform(minmax_df)
     scaled_list_delta_time_rating = standard_scaler.transform(np.array(list_delta_time_rating).reshape(-1, 1))
 
     list_all = []
-    for i in range(0, h, 12):
+    for i in range(0, 12, h):
         time_series_array = np.array([np.array(scaled_minmax_df[:, 4]), np.array(scaled_minmax_df[:, 6]),
                                       np.array(scaled_minmax_df[:, 9]),
                                       np.array(scaled_minmax_df[:, 11]),

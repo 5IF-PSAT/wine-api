@@ -41,8 +41,9 @@ services:
       - TZ=Europe/Paris
     volumes:
       - .:/app
-      - ./logs:/app/logs
       - ./db_data:/app/db_data
+      - ./logs:/app/logs
+      - ./model:/app/model
       - ./model_data:/app/model_data
     depends_on:
       - postgres
