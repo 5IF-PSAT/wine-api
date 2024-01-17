@@ -46,6 +46,14 @@ class RegionManager(models.Manager):
         """
         region_name = data.get("region_name", None)
         country = data.get("country", None)
+        radius = data.get("radius", None)
+        latitude = data.get("latitude", None)
+        longitude = data.get("longitude", None)
+
+        if radius and (latitude is None or longitude is None):
+            raise exceptions.ValidationError("Missing latitude or longitude")
+        if latitude and longitude and radius is None:
+            raise exceptions.ValidationError("Missing radius")
 
         query = """SELECT id, created_at, updated_at, "RegionName",
                     "Country", "Code", "Latitude", "Longitude" FROM region WHERE """
@@ -57,6 +65,12 @@ class RegionManager(models.Manager):
         if country:
             query += "\"Country\" LIKE %s AND "
             params.append(f"%{country}%")
+        if radius and latitude and longitude:
+            # Apply Haversine formula
+            query += """(6371 * acos(cos(radians(%s)) * cos(radians("Latitude")) * cos(radians("Longitude") - 
+            radians(%s)) + sin(radians(%s)) * sin(radians("Latitude")))) < %s AND """
+            params.extend([latitude, longitude, latitude, radius])
+        # If no parameters, add 1=1 to query to avoid error
         query += "1=1"
 
         # # Remove last AND

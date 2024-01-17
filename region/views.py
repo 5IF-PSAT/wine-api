@@ -86,9 +86,15 @@ class RegionFilter(ListView):
     def get_queryset(self):
         region_name = self.request.query_params.get('region_name', None)
         country = self.request.query_params.get('country', None)
+        radius = self.request.query_params.get('radius', None)
+        latitude = self.request.query_params.get('latitude', None)
+        longitude = self.request.query_params.get('longitude', None)
         data = {
             "region_name": region_name,
-            "country": country
+            "country": country,
+            "radius": radius,
+            "latitude": latitude,
+            "longitude": longitude
         }
         # Get list of regions matching the given filters
         list_regions = Region.objects.filter_regions(**data)
