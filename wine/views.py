@@ -6,7 +6,7 @@ from wine_api.views import (
     DestroyView
 )
 from wine.models import Wine
-from wine.serializers import WineSerializer
+from wine.serializers import WineSerializer, FilterWineSerializer
 from rest_framework import status
 from django.db import transaction
 from rest_framework.parsers import JSONParser
@@ -78,3 +78,35 @@ class WineDetail(RetrieveView, UpdateView, DestroyView):
     def delete(self, request, *args, **kwargs):
         Wine.objects.delete_wine(request.wine)
         return HttpResponse(status=status.HTTP_204_NO_CONTENT)
+
+
+class WineFilter(ListView):
+    """
+    Filter wines
+    """
+    serializer_class = FilterWineSerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        wine_name = self.request.query_params.get('wine_name', None)
+        type = self.request.query_params.get('type', None)
+        elaborate = self.request.query_params.get('elaborate', None)
+        abv = self.request.query_params.get('abv', None)
+        body = self.request.query_params.get('body', None)
+        acidity = self.request.query_params.get('acidity', None)
+        winery_id = self.request.query_params.get('winery_id', None)
+        region_id = self.request.query_params.get('region_id', None)
+        data = {
+            "wine_name": wine_name,
+            "type": type,
+            "elaborate": elaborate,
+            "abv": abv,
+            "body": body,
+            "acidity": acidity,
+            "winery_id": winery_id,
+            "region_id": region_id,
+        }
+        # Get list of wines matching the given filters
+        list_wines = Wine.objects.filter_wines(**data)
+        # Serialize list of wines
+        return list_wines

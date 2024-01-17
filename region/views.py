@@ -6,7 +6,7 @@ from wine_api.views import (
     DestroyView
 )
 from region.models import Region
-from region.serializers import RegionSerializer
+from region.serializers import RegionSerializer, FilterRegionSerializer
 from rest_framework import status
 from django.db import transaction
 from rest_framework.parsers import JSONParser
@@ -74,3 +74,22 @@ class RegionDetail(RetrieveView, UpdateView, DestroyView):
     def delete(self, request, *args, **kwargs):
         Region.objects.delete_region(request.region)
         return HttpResponse(status=status.HTTP_204_NO_CONTENT)
+
+
+class RegionFilter(ListView):
+    """
+    Filter regions by name and country
+    """
+    serializer_class = FilterRegionSerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        region_name = self.request.query_params.get('region_name', None)
+        country = self.request.query_params.get('country', None)
+        data = {
+            "region_name": region_name,
+            "country": country
+        }
+        # Get list of regions matching the given filters
+        list_regions = Region.objects.filter_regions(**data)
+        return list_regions

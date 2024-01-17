@@ -38,6 +38,38 @@ class RegionManager(models.Manager):
         """
         return self.filter(region_name__icontains=region_name)
 
+    def filter_regions(self, **data):
+        """
+        Returns all regions matching the given filters
+        :param data: dict
+        :return:
+        """
+        region_name = data.get("region_name", None)
+        country = data.get("country", None)
+
+        query = """SELECT id, created_at, updated_at, "RegionName",
+                    "Country", "Code", "Latitude", "Longitude" FROM region WHERE """
+        # Add parameters not None to list
+        params = []
+        if region_name:
+            query += "\"RegionName\" LIKE %s AND "
+            params.append(f"%{region_name}%")
+        if country:
+            query += "\"Country\" LIKE %s AND "
+            params.append(f"%{country}%")
+        query += "1=1"
+
+        # # Remove last AND
+        # query = query[:-4]
+        with connection.cursor() as cursor:
+            cursor.execute(query, params)
+            regions = cursor.fetchall()
+        labels = ["id", "created_at", "updated_at",
+                  "region_name", "country",
+                  "code", "latitude", "longitude"]
+        result = [dict(zip(labels, row)) for row in regions]
+        return result
+
     def update_region(self, region, **data):
         region.region_name = data.get("region_name", region.region_name)
         region.country = data.get("country", region.country)

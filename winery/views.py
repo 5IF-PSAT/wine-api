@@ -6,7 +6,7 @@ from wine_api.views import (
     DestroyView
 )
 from winery.models import Winery
-from winery.serializers import WinerySerializer
+from winery.serializers import WinerySerializer, FilterWinerySerializer
 from rest_framework import status
 from django.db import transaction
 from rest_framework.parsers import JSONParser
@@ -74,3 +74,21 @@ class WineryDetail(RetrieveView, UpdateView, DestroyView):
     def delete(self, request, *args, **kwargs):
         request.winery.delete()
         return HttpResponse(status=status.HTTP_204_NO_CONTENT)
+
+
+class WineryFilter(ListView):
+    """
+    Filter wineries by parameters.
+    """
+    serializer_class = FilterWinerySerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        winery_name = self.request.query_params.get('winery_name', None)
+        website = self.request.query_params.get('website', None)
+        data = {
+            "winery_name": winery_name,
+            "website": website
+        }
+        list_wineries = Winery.objects.filter_wineries(**data)
+        return list_wineries

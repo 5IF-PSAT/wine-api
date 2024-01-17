@@ -36,6 +36,32 @@ class WineryManager(models.Manager):
         """
         return self.filter(winery_name__icontains=winery_name)
 
+    def filter_wineries(self, **data):
+        """
+        Returns all wineries matching the given filters
+        :param data: dict
+        :return:
+        """
+        winery_name = data.get("winery_name", None)
+        website = data.get("website", None)
+
+        query = """SELECT id, created_at, updated_at, "WineryName", "Website" FROM winery WHERE """
+        # Add parameters not None to list
+        params = []
+        if winery_name:
+            query += "\"WineryName\" LIKE %s AND "
+            params.append(f"%{winery_name}%")
+        if website:
+            query += "\"Website\" LIKE %s AND "
+            params.append(f"%{website}%")
+        query += "1 = 1"
+        with connection.cursor() as cursor:
+            cursor.execute(query, params)
+            wineries = cursor.fetchall()
+        labels = ["id", "created_at", "updated_at", "winery_name", "website"]
+        result = [dict(zip(labels, winery)) for winery in wineries]
+        return result
+
     def update_winery(self, winery, **data):
         winery.winery_name = data.get("winery_name", winery.winery_name)
         winery.website = data.get("website", winery.website)

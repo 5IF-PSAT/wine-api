@@ -36,6 +36,60 @@ class WineManager(models.Manager):
         """
         return self.filter(wine_name__icontains=wine_name)
 
+    def filter_wines(self, **data):
+        """
+        Returns all wines matching the given filters
+        :param data: dict
+        :return:
+        """
+        wine_name = data.get("wine_name", None)
+        type = data.get("type", None)
+        elaborate = data.get("elaborate", None)
+        abv = data.get("abv", None)
+        body = data.get("body", None)
+        acidity = data.get("acidity", None)
+        winery_id = data.get("winery_id", None)
+        region_id = data.get("region_id", None)
+
+        query = """SELECT id, created_at, updated_at, "WineName",
+                    "Type", "Elaborate", "ABV", "Body", "Acidity",
+                  "RegionID", "WineryID" FROM wine WHERE """
+        # Add parameters not None to list
+        params = []
+        if wine_name:
+            query += "\"WineName\" LIKE %s AND "
+            params.append(f"%{wine_name}%")
+        if type:
+            query += "\"Type\" = %s AND "
+            params.append(type)
+        if elaborate:
+            query += "\"Elaborate\" LIKE %s AND "
+            params.append(f"%{elaborate}%")
+        if abv:
+            query += "\"ABV\" = %s AND "
+            params.append(abv)
+        if body:
+            query += "\"Body\" = %s AND "
+            params.append(body)
+        if acidity:
+            query += "\"Acidity\" = %s AND "
+            params.append(acidity)
+        if winery_id:
+            query += "\"WineryID\" = %s AND "
+            params.append(winery_id)
+        if region_id:
+            query += "\"RegionID\" = %s AND "
+            params.append(region_id)
+        query += "1=1"
+        with connection.cursor() as cursor:
+            cursor.execute(query, params)
+            wines = cursor.fetchall()
+        labels = ['id', 'created_at', 'updated_at', 'wine_name',
+                  'type', 'elaborate', 'abv', 'body', 'acidity',
+                  'region_id', 'winery_id']
+        result = [dict(zip(labels, row)) for row in wines]
+        return result
+
     def update_wine(self, wine, **data):
         wine.wine_name = data.get("wine_name", wine.wine_name)
         wine.type = data.get("type", wine.type)

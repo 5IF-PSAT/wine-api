@@ -219,7 +219,6 @@ def predict_rating(request):
                                                   time_series_input.shape[2], 1)
     numerical_input = np.array([element[1] for element in list_all])
     cnn_model = load_model(f'{BASE_DIR}/model/cnn_model.h5')
-    print(cnn_model.summary())
 
     # Make prediction
     predictions = cnn_model.predict([time_series_input, numerical_input])

@@ -14,3 +14,11 @@ class WinerySerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         instance = Winery.objects.update_winery(instance, **validated_data)
         return instance
+
+
+class FilterWinerySerializer(serializers.Serializer):
+    id = serializers.IntegerField(required=False)
+    created_at = serializers.DateTimeField(required=False)
+    updated_at = serializers.DateTimeField(required=False)
+    winery_name = serializers.CharField(max_length=255, required=False)
+    website = serializers.CharField(max_length=255, required=False)

@@ -14,3 +14,14 @@ class RegionSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         instance = Region.objects.update_region(instance, **validated_data)
         return instance
+
+
+class FilterRegionSerializer(serializers.Serializer):
+    id = serializers.IntegerField(required=False)
+    created_at = serializers.DateTimeField(required=False)
+    updated_at = serializers.DateTimeField(required=False)
+    region_name = serializers.CharField(max_length=255, required=False)
+    country = serializers.CharField(max_length=255, required=False)
+    code = serializers.CharField(max_length=255, required=False)
+    latitude = serializers.FloatField(required=False)
+    longitude = serializers.FloatField(required=False)
