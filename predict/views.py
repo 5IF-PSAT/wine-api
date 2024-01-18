@@ -13,7 +13,6 @@ from wine.models import Wine
 import json
 from rest_framework.permissions import AllowAny
 from wine_api.settings import BASE_DIR
-import time
 import joblib
 import numpy as np
 from tensorflow.keras.models import load_model
@@ -91,14 +90,27 @@ def forecast_weather(request):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def predict_rating(request):
+    """
+    Predict the rating of a wine with maximum vintage of 2023
+    :param request:
+    :return:
+    """
     wine_id = request.query_params.get('wine_id', None)
+    batch_vintage = request.query_params.get('batch_vintage', '2023')
     rating_year = request.query_params.get('rating_year', None)
-    api_key = request.query_params.get('api_key', None)
 
-    if wine_id is None or rating_year is None or api_key is None:
-        return HttpResponse(content='Missing parameters: wine_id, rating_year, api_key', status=400)
+    if wine_id is None or rating_year is None:
+        return HttpResponse(content='Missing parameters: wine_id, rating_year', status=400)
+
+    batch_vintage = int(batch_vintage)
+    rating_year = int(rating_year)
+    if batch_vintage > 2023:
+        return HttpResponse(content='''batch_vintage must be less than 2023, we can only predict the rating of a wine 
+        with maximum vintage of 2023''', status=400)
+    if batch_vintage > rating_year:
+        return HttpResponse(content='rating_year must be greater than batch_vintage', status=400)
     # Check if the request is cached
-    cache_key = f'predict_rating_{wine_id}_{rating_year}'
+    cache_key = f'predict_rating_{wine_id}_{batch_vintage}_{rating_year}'
     cached_response = cache.get(cache_key)
     if cached_response is not None:
         returned_data = json.loads(cached_response)
@@ -106,11 +118,9 @@ def predict_rating(request):
         return JsonResponse(serializer.data, status=200)
     # Config
     h = 12
-    frequency = 'MS'
-    predict_field = ['avg_temperature', 'avg_sunshine_duration',
-                     'avg_precipitation', 'avg_humidity',
-                     'avg_soil_temperature', 'avg_soil_moisture']
-    batch_vintage = 2023
+    # predict_field = ['avg_temperature', 'avg_sunshine_duration',
+    #                  'avg_precipitation', 'avg_humidity',
+    #                  'avg_soil_temperature', 'avg_soil_moisture']
 
     # Get wine
     wine = Wine.objects.get_wine_by_id(wine_id)
@@ -123,14 +133,6 @@ def predict_rating(request):
     region = wine.region
     xwine_region_id = region.region_id
 
-    # Initialize the model
-    model = TimeGPT(
-        token=api_key,
-    )
-    # Check if api_key is valid
-    if not model.validate_token():
-        return HttpResponse(content='Invalid api_key', status=400)
-
     # Get the weather data
     weather_data = pd.read_parquet(f'{BASE_DIR}/model_data/agg_monthly.parquet')
     weather_data = weather_data[weather_data['RegionID'] == xwine_region_id]
@@ -138,18 +140,15 @@ def predict_rating(request):
     # Add timestamp column
     weather_data['timestamp'] = pd.to_datetime(weather_data[['year', 'month']].assign(DAY=1))
 
-    # Forecast weather
-    forecast_df = []
-    for field in predict_field:
-        df = model.forecast(
-            df=weather_data,
-            h=h,
-            time_col='timestamp',
-            target_col=field,
-            freq=frequency,
-        )
-        forecast_df.append(df)
-        time.sleep(0.5)  # To avoid the 429 error: too many requests
+    # Read forecast data
+    if batch_vintage == 2023:
+        forecast_df = pd.read_csv(f'{BASE_DIR}/model_data/agg_monthly_2023.csv')
+        # Add year column
+        forecast_df['year'] = forecast_df.apply(lambda row: int(row['timestamp'].split('-')[0]), axis=1)
+    else:
+        forecast_df = pd.read_parquet(f'{BASE_DIR}/model_data/agg_monthly.parquet')
+    # Filter data by region_id and year
+    forecast_df = forecast_df[(forecast_df['RegionID'] == xwine_region_id) & (forecast_df['year'] == batch_vintage)]
 
     # Get and normalize data
     column_minmax = ['Elaborate', 'ABV', 'Body', 'Acidity',
@@ -163,15 +162,15 @@ def predict_rating(request):
     minmax_df['Body'] = list_body
     minmax_df['Acidity'] = list_acidity
     minmax_df['Elaborate'] = list_elaborate
-    minmax_df['avg_temperature'] = forecast_df[0]['TimeGPT'].tolist()
-    minmax_df['avg_sunshine_duration'] = forecast_df[1]['TimeGPT'].tolist()
-    minmax_df['avg_precipitation'] = forecast_df[2]['TimeGPT'].tolist()
+    minmax_df['avg_temperature'] = forecast_df['avg_temperature'].tolist()
+    minmax_df['avg_sunshine_duration'] = forecast_df['avg_sunshine_duration'].tolist()
+    minmax_df['avg_precipitation'] = forecast_df['avg_precipitation'].tolist()
     minmax_df['avg_rain'] = [0] * h
     minmax_df['avg_snowfall'] = [0] * h
-    minmax_df['avg_humidity'] = forecast_df[3]['TimeGPT'].tolist()
+    minmax_df['avg_humidity'] = forecast_df['avg_humidity'].tolist()
     minmax_df['avg_wind_speed'] = [0] * h
-    minmax_df['avg_soil_temperature'] = forecast_df[4]['TimeGPT'].tolist()
-    minmax_df['avg_soil_moisture'] = forecast_df[5]['TimeGPT'].tolist()
+    minmax_df['avg_soil_temperature'] = forecast_df['avg_soil_temperature'].tolist()
+    minmax_df['avg_soil_moisture'] = forecast_df['avg_soil_moisture'].tolist()
 
     acid_dict = {'Low': 1, 'Medium': 2, 'High': 3}
     body_dict = {'Light-bodied': 1, 'Medium-bodied': 2, 'Full-bodied': 3, 'Very full-bodied': 4}
@@ -189,7 +188,7 @@ def predict_rating(request):
     minmax_df['Body'] = minmax_df['Body'].map(body_dict)
     minmax_df['Elaborate'] = minmax_df['Elaborate'].map(elaborate_dict)
 
-    list_delta_time_rating = [int(rating_year) - batch_vintage] * h
+    list_delta_time_rating = [rating_year - batch_vintage] * h
 
     # load minmax_scaler
     with open(f'{BASE_DIR}/model/minmax_scaler.save', 'rb') as f:
@@ -225,7 +224,9 @@ def predict_rating(request):
 
     # Return the prediction
     returned_data = {
-        'rating_year': int(rating_year),
+        'wine_id': wine_id,
+        'batch_vintage': batch_vintage,
+        'rating_year': rating_year,
         'predict_rating': float(predictions[0][0])
     }
 

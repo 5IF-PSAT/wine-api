@@ -8,5 +8,7 @@ class PredictSerializer(serializers.Serializer):
 
 
 class RatingSerializer(serializers.Serializer):
+    wine_id = serializers.IntegerField()
+    batch_vintage = serializers.IntegerField()
     rating_year = serializers.IntegerField()
     predict_rating = serializers.FloatField()

@@ -12,9 +12,10 @@
   - [Predict](#predict)
 - [How to run](#how-to-run)
 - [Contributing](#contributing)
+- [Acknowledgement](#acknowledgement)
 
 # Introduction
-This is a API for our research in Wine Analysis and Prediction. The API is used to predict the quality of wine based on the input parameters. The API is built using [Django](https://www.djangoproject.com/). 
+This is an API for our research in Wine Analysis and Prediction. The API is used to predict the quality of wine based on the input parameters. The API is built using [Django](https://www.djangoproject.com/). 
 We use [Postgres](https://www.postgresql.org/) as our database. We also use [Redis](https://redis.io/) as our cache database.
 
 # Prerequisites
@@ -170,10 +171,60 @@ Base URL: http://localhost:8000/api/v1/wines
 </table>
 
 ## Region
+Base URL: http://localhost:8000/api/v1/regions
 
 ## Winery
+Base URL: http://localhost:8000/api/v1/wineries
 
 ## Predict
+Base URL: http://localhost:8000/api/v1/predict
+
+<table>
+  <tr>
+    <th>Endpoint</th>
+    <th>Full path</th>
+    <th>Method</th>
+    <th>Description</th>
+    <th>Parameters</th>
+    <th>Body</th>
+  </tr>
+
+<tr>
+  <td rowspan="5">/forecast_weather/</td>
+  <td rowspan="5"><code>/forecast_weather/?region_id=%s...</code></td>
+  <td rowspan="5">GET</td>
+  <td rowspan="5">Forecast a weather field (avg_temperature, avg_humidity ...) of a region</td>
+  <td>region_id (mandatory)</td>
+  <td rowspan="5"></td>
+</tr>
+  <tr>
+    <td>predict_field (mandatory; avg_temperature, avg_humidity, avg_pressure, avg_wind_speed, avg_precipitation)</td>
+  </tr>
+  <tr>
+    <td>nb_months (mandatory; int, number of months to forecast, recommend to read TimeGPT doc)</td>
+  </tr>
+  <tr>
+    <td>frequency (mandatory; Ex: MS, DS, recommend to read TimeGPT doc)</td>
+  </tr>
+  <tr>
+    <td>api_key (mandatory; API key of Nixtlats TimeGPT)</td>
+  </tr>
+
+<tr>
+  <td rowspan="3">/predict_rating/</td>
+  <td rowspan="3"><code>/predict_rating/?wine_id=%s...</code></td>
+  <td rowspan="3">GET</td>
+  <td rowspan="3">Predict average rating of a batch wine in a specific year</td>
+  <td>wine_id (mandatory)</td>
+  <td rowspan="3"></td>
+</tr>
+  <tr>
+    <td>batch_vintage (optional, default: 2023)</td>
+  </tr>
+  <tr>
+    <td>rating_year (mandatory)</td>
+  </tr>
+</table>
 
 # How to run
 1. Clone this repository
@@ -223,3 +274,10 @@ SELECT * FROM wine;
 
 # Contributing
 - [Minh NGO](mailto:ngoc-minh.ngo@insa-lyon.fr)
+
+# Acknowledgement
+- [Nixtlats](https://nixtlaverse.nixtla.io/nixtla/index.html)
+- [Tensorflow](https://www.tensorflow.org/)
+- [Django](https://www.djangoproject.com/)
+- [Django Rest Framework](https://www.django-rest-framework.org/)
+- [Docker](https://www.docker.com/)
