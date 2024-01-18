@@ -12,3 +12,16 @@ class RatingSerializer(serializers.Serializer):
     batch_vintage = serializers.IntegerField()
     rating_year = serializers.IntegerField()
     predict_rating = serializers.FloatField()
+
+
+class PredictField(serializers.DictField):
+    batch_vintage = serializers.IntegerField()
+    rating = serializers.FloatField()
+
+
+class ListRatingSerializer(serializers.Serializer):
+    wine_id = serializers.IntegerField()
+    rating_year = serializers.IntegerField()
+    predict_rating = serializers.ListField(
+        child=PredictField()
+    )

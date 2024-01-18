@@ -16,7 +16,7 @@ tmp/
 db_data/
 logs/
 model/
-model_data/
+predict_data/
 
 # IDE
 .vscode

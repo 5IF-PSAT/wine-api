@@ -226,6 +226,18 @@ Base URL: http://localhost:8000/api/v1/predict
   <tr>
     <td>rating_year (mandatory)</td>
   </tr>
+
+<tr>
+  <td rowspan="2">/predict_all_rating/</td>
+  <td rowspan="2"><code>/predict_all_rating/?wine_id=%s&rating_year=%s</code></td>
+  <td rowspan="2">GET</td>
+  <td rowspan="2">Predict average rating in rating_year from the batch vintage from 1949 to 2023</td>
+  <td>wine_id (mandatory)</td>
+  <td rowspan="2"></td>
+</tr>
+  <tr>
+    <td>rating_year (optional, default: 2023)</td>
+  </tr>
 </table>
 
 # How to run
