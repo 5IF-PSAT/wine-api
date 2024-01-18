@@ -26,6 +26,8 @@ We use [Postgres](https://www.postgresql.org/) as our database. We also use [Red
 - [Redis](https://redis.io/)
 
 # Entity Relationship Diagram
+![ERD](./assets/ERD.png)
+*Entity Relationship Diagram*
 
 # API Endpoint
 Here is the table of the API endpoint. You can also see the documentation after running the API on [Swagger](http://localhost:8000/doc/).
