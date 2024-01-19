@@ -69,6 +69,7 @@ INSTALLED_APPS = [
     "winery.apps.WineryConfig",
     "region.apps.RegionConfig",
     "predict.apps.PredictConfig",
+    "compare.apps.CompareConfig",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",

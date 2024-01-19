@@ -28,6 +28,9 @@ class WineManager(models.Manager):
     def get_wine_by_id(self, id):
         return self.filter(id=id).first()
 
+    def get_wine_by_wine_id(self, wine_id):
+        return self.filter(wine_id=wine_id).first()
+
     def get_wines_by_name(self, wine_name):
         """
         Returns all wines having wine_name in their name

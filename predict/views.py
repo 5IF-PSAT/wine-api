@@ -31,6 +31,16 @@ def forecast_weather(request):
             nb_months is None or frequency is None or api_key is None:
         return HttpResponse(content='Missing parameters: region_id, predict_field, nb_months, freq, api_key',
                             status=400)
+    list_fields = ['avg_temperature', 'min_temperature', 'max_temperature',
+                   'avg_sunshine_duration', 'min_sunshine_duration', 'max_sunshine_duration',
+                   'avg_precipitation', 'avg_rain', 'avg_snowfall',
+                   'avg_humidity', 'avg_wind_speed', 'avg_soil_temperature',
+                   'avg_soil_moisture']
+    if predict_field not in list_fields:
+        return HttpResponse(content='''predict_field must be in this list: avg_temperature, min_temperature,
+        max_temperature, avg_sunshine_duration, min_sunshine_duration, max_sunshine_duration, avg_precipitation,
+        avg_rain, avg_snowfall, avg_humidity, avg_wind_speed, avg_soil_temperature, avg_soil_moisture''',
+                            status=400)
     # Check if the request is cached
     cache_key = f'forecast_weather_{region_id}_{predict_field}_{nb_months}_{frequency}'
     cached_response = cache.get(cache_key)

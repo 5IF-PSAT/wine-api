@@ -24,6 +24,7 @@ urlpatterns = [
     path('api/v1/wineries/', include('winery.urls'), name='winery'),
     path('api/v1/regions/', include('region.urls'), name='region'),
     path('api/v1/predict/', include('predict.urls'), name='predict'),
+    path('api/v1/compare/', include('compare.urls'), name='compare'),
 
     re_path(r'^doc(?P<format>\.json|\.yaml)$',
             swagger_schema_view.without_ui(cache_timeout=0), name='schema-json'),
