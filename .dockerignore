@@ -16,6 +16,7 @@ tmp/
 db_data/
 logs/
 model/
+compare_data/
 predict_data/
 
 # IDE

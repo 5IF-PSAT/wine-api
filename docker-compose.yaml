@@ -44,6 +44,7 @@ services:
       - ./db_data:/app/db_data
       - ./logs:/app/logs
       - ./model:/app/model
+      - ./compare_data:/app/compare_data
       - ./predict_data:/app/predict_data
     depends_on:
       - postgres
