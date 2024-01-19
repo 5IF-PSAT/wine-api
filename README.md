@@ -9,6 +9,7 @@
   - [Wine](#wine)
   - [Region](#region)
   - [Winery](#winery)
+  - [Compare](#compare)
   - [Predict](#predict)
 - [How to run](#how-to-run)
 - [Contributing](#contributing)
@@ -178,6 +179,35 @@ Base URL: http://localhost:8000/api/v1/regions
 ## Winery
 Base URL: http://localhost:8000/api/v1/wineries
 
+## Compare
+Base URL: http://localhost:8000/api/v1/compare
+
+<table>
+  <tr>
+    <th>Endpoint</th>
+    <th>Full path</th>
+    <th>Method</th>
+    <th>Description</th>
+    <th>Parameters</th>
+    <th>Body</th>
+  </tr>
+
+<tr>
+  <td rowspan="3">/compare_wine/</td>
+  <td rowspan="3"><code>/compare_wine/?wine_id=%s...</code></td>
+  <td rowspan="3">GET</td>
+  <td rowspan="3">Get a list of wines that have similar characteristics with the given wine</td>
+  <td>wine_id (mandatory, reference <code>wine_id</code> to compare)</td>
+  <td rowspan="3"></td>
+</tr>
+  <tr>
+    <td>vintage (mandatory, reference <code>vintage</code> to compare, between 1950 and 2021)</td>
+  </tr>
+  <tr>
+    <td>nb_wines (optional, default: 10)</td>
+  </tr>
+</table>
+
 ## Predict
 Base URL: http://localhost:8000/api/v1/predict
 
@@ -231,7 +261,7 @@ Base URL: http://localhost:8000/api/v1/predict
   <td rowspan="2">/predict_all_rating/</td>
   <td rowspan="2"><code>/predict_all_rating/?wine_id=%s&rating_year=%s</code></td>
   <td rowspan="2">GET</td>
-  <td rowspan="2">Predict average rating in rating_year from the batch vintage from 1949 to 2023</td>
+  <td rowspan="2">Predict average rating in <code>rating_year</code> from the batch vintage from 1949 to 2023</td>
   <td>wine_id (mandatory)</td>
   <td rowspan="2"></td>
 </tr>
