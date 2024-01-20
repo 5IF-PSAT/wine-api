@@ -45,7 +45,7 @@ class WineryManager(models.Manager):
         winery_name = data.get("winery_name", None)
         website = data.get("website", None)
 
-        query = """SELECT id, created_at, updated_at, "WineryName", "Website" FROM winery WHERE """
+        query = """SELECT id, "WineryID", created_at, updated_at, "WineryName", "Website" FROM winery WHERE """
         # Add parameters not None to list
         params = []
         if winery_name:
@@ -58,7 +58,7 @@ class WineryManager(models.Manager):
         with connection.cursor() as cursor:
             cursor.execute(query, params)
             wineries = cursor.fetchall()
-        labels = ["id", "created_at", "updated_at", "winery_name", "website"]
+        labels = ["id", "winery_id", "created_at", "updated_at", "winery_name", "website"]
         result = [dict(zip(labels, winery)) for winery in wineries]
         return result
 

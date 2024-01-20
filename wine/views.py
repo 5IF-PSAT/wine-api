@@ -31,7 +31,7 @@ class WineList(ListView, CreateView):
         if cached_data is not None:
             # If data is in cache, return it
             returned_data = json.loads(cached_data)
-            serializer = WineSerializer(data=returned_data)
+            serializer = WineSerializer(returned_data)
             return serializer.data
         serializer = WineSerializer(Wine.objects.all(), many=True)
         # If data is not in cache, cache it

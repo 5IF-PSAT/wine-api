@@ -18,7 +18,7 @@ class Migration(migrations.Migration):
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('created_at', models.DateTimeField(auto_now_add=True, null=True, serialize=True)),
                 ('updated_at', models.DateTimeField(auto_now=True, null=True, serialize=True)),
-                ('winery_id', models.IntegerField(db_column='WineryID', null=True)),
+                ('winery_id', models.IntegerField(db_column='WineryID', null=True, serialize=True)),
                 ('winery_name', models.CharField(db_column='WineryName', max_length=255, serialize=True)),
                 ('website', models.CharField(db_column='Website', max_length=255, serialize=True)),
             ],

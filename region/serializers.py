@@ -5,8 +5,8 @@ from region.models import Region
 class RegionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Region
-        fields = ['id', 'region_name', 'country', 'code', 'latitude', 'longitude']
-        read_only_fields = ('id',)
+        fields = ['id', 'region_id', 'region_name', 'country', 'code', 'latitude', 'longitude']
+        read_only_fields = ('id', 'region_id',)
 
     def create(self, validated_data):
         return Region.objects.create_region(**validated_data)
@@ -18,6 +18,7 @@ class RegionSerializer(serializers.ModelSerializer):
 
 class FilterRegionSerializer(serializers.Serializer):
     id = serializers.IntegerField(required=False)
+    region_id = serializers.IntegerField(required=False)
     created_at = serializers.DateTimeField(required=False)
     updated_at = serializers.DateTimeField(required=False)
     region_name = serializers.CharField(max_length=255, required=False)

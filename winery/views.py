@@ -29,7 +29,7 @@ class WineryList(ListView, CreateView):
         cached_data = cache.get('winery_list')
         if cached_data is not None:
             returned_data = json.loads(cached_data)
-            serializer = WinerySerializer(data=returned_data, many=True)
+            serializer = WinerySerializer(returned_data, many=True)
             return serializer.data
         serializer = WinerySerializer(Winery.objects.all(), many=True)
         cache.set('winery_list', json.dumps(serializer.data), timeout=CACHE_TTL)

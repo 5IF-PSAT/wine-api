@@ -22,9 +22,6 @@ class WineManager(models.Manager):
                            created_at=datetime.datetime.now())
         return wine
 
-    def get_wines(self):
-        return self.all()
-
     def get_wine_by_id(self, id):
         return self.filter(id=id).first()
 
@@ -54,42 +51,45 @@ class WineManager(models.Manager):
         winery_id = data.get("winery_id", None)
         region_id = data.get("region_id", None)
 
-        query = """SELECT id, created_at, updated_at, "WineName",
-                    "Type", "Elaborate", "ABV", "Body", "Acidity",
-                  "RegionID", "WineryID" FROM wine WHERE """
+        query = """SELECT wine.id, wine."WineID", wine.created_at, wine.updated_at, wine."WineName",
+                    wine."Type", wine."Elaborate", wine."ABV", wine."Body", wine."Acidity",
+                  region."RegionID", region."RegionName", winery."WineryID", winery."WineryName" 
+                  FROM wine JOIN winery ON wine."WineryID" = winery.id
+                  JOIN region ON wine."RegionID" = region.id
+                  WHERE """
         # Add parameters not None to list
         params = []
         if wine_name:
-            query += "\"WineName\" LIKE %s AND "
+            query += "wine.\"WineName\" LIKE %s AND "
             params.append(f"%{wine_name}%")
         if type:
-            query += "\"Type\" = %s AND "
+            query += "wine.\"Type\" = %s AND "
             params.append(type)
         if elaborate:
-            query += "\"Elaborate\" LIKE %s AND "
+            query += "wine.\"Elaborate\" LIKE %s AND "
             params.append(f"%{elaborate}%")
         if abv:
-            query += "\"ABV\" = %s AND "
+            query += "wine.\"ABV\" = %s AND "
             params.append(abv)
         if body:
-            query += "\"Body\" = %s AND "
+            query += "wine.\"Body\" = %s AND "
             params.append(body)
         if acidity:
-            query += "\"Acidity\" = %s AND "
+            query += "wine.\"Acidity\" = %s AND "
             params.append(acidity)
         if winery_id:
-            query += "\"WineryID\" = %s AND "
+            query += "wine.\"WineryID\" = %s AND "
             params.append(winery_id)
         if region_id:
-            query += "\"RegionID\" = %s AND "
+            query += "wine.\"RegionID\" = %s AND "
             params.append(region_id)
         query += "1=1"
         with connection.cursor() as cursor:
             cursor.execute(query, params)
             wines = cursor.fetchall()
-        labels = ['id', 'created_at', 'updated_at', 'wine_name',
+        labels = ['id', 'wine_id', 'created_at', 'updated_at', 'wine_name',
                   'type', 'elaborate', 'abv', 'body', 'acidity',
-                  'region_id', 'winery_id']
+                  'region_id', 'region_name', 'winery_id', 'winery_name']
         result = [dict(zip(labels, row)) for row in wines]
         return result
 

@@ -18,7 +18,7 @@ class Migration(migrations.Migration):
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('created_at', models.DateTimeField(auto_now_add=True, null=True, serialize=True)),
                 ('updated_at', models.DateTimeField(auto_now=True, null=True, serialize=True)),
-                ('region_id', models.IntegerField(db_column='RegionID', null=True)),
+                ('region_id', models.IntegerField(db_column='RegionID', null=True, serialize=True)),
                 ('region_name', models.CharField(db_column='RegionName', max_length=255, serialize=True)),
                 ('country', models.CharField(db_column='Country', max_length=255, serialize=True)),
                 ('code', models.CharField(db_column='Code', max_length=255, serialize=True)),

@@ -55,7 +55,7 @@ class RegionManager(models.Manager):
         if latitude and longitude and radius is None:
             raise exceptions.ValidationError("Missing radius")
 
-        query = """SELECT id, created_at, updated_at, "RegionName",
+        query = """SELECT id, "RegionID", created_at, updated_at, "RegionName",
                     "Country", "Code", "Latitude", "Longitude" FROM region WHERE """
         # Add parameters not None to list
         params = []
@@ -78,7 +78,7 @@ class RegionManager(models.Manager):
         with connection.cursor() as cursor:
             cursor.execute(query, params)
             regions = cursor.fetchall()
-        labels = ["id", "created_at", "updated_at",
+        labels = ["id", "region_id", "created_at", "updated_at",
                   "region_name", "country",
                   "code", "latitude", "longitude"]
         result = [dict(zip(labels, row)) for row in regions]
