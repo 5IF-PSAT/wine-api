@@ -34,6 +34,11 @@ class ListView(mixins.ListModelMixin, GenericViewSet):
         return self.list(request, *args, **kwargs)
 
 
+class SecondListView(mixins.ListModelMixin, GenericViewSet):
+    def get_queryset(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
 class RetrieveView(mixins.RetrieveModelMixin, GenericViewSet):
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)

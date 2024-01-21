@@ -28,13 +28,37 @@ class WineManager(models.Manager):
     def get_wine_by_wine_id(self, wine_id):
         return self.filter(wine_id=wine_id).first()
 
-    def get_wines_by_name(self, wine_name):
+    def get_wines(self, **data):
         """
-        Returns all wines having wine_name in their name
-        :param wine_name:
+        Returns all wines given page and page_size
+        :param data:
         :return:
         """
-        return self.filter(wine_name__icontains=wine_name)
+        page = data.get("page", 1)
+        page_size = data.get("page_size", 10)
+        if page < 1:
+            raise exceptions.ValidationError("Page must be greater than 0")
+        if page_size < 1:
+            raise exceptions.ValidationError("Page size must be greater than 0")
+        offset = (page - 1) * page_size
+        query = """
+            SELECT wine.id, wine."WineID", wine.created_at, wine.updated_at, wine."WineName",
+            wine."Type", wine."Elaborate", wine."ABV", wine."Body", wine."Acidity",
+            region."RegionID", region."RegionName", winery."WineryID", winery."WineryName" 
+            FROM wine JOIN winery ON wine."WineryID" = winery.id
+            JOIN region ON wine."RegionID" = region.id
+            ORDER BY wine.id ASC
+            LIMIT %s OFFSET %s
+        """
+        with connection.cursor() as cursor:
+            cursor.execute(query, [page_size, offset])
+            wines = cursor.fetchall()
+        labels = ['id', 'wine_id', 'created_at', 'updated_at', 'wine_name',
+                  'type', 'elaborate', 'abv', 'body', 'acidity',
+                  'region', 'region_name', 'winery', 'winery_name']
+        result = [dict(zip(labels, row)) for row in wines]
+        return result
+
 
     def filter_wines(self, **data):
         """

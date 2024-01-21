@@ -1,12 +1,13 @@
 from wine_api.views import (
     ListView,
+    SecondListView,
     RetrieveView,
     CreateView,
     UpdateView,
     DestroyView
 )
 from wine.models import Wine
-from wine.serializers import WineSerializer, FilterWineSerializer
+from wine.serializers import WineSerializer, FilterWineSerializer, SecondWineSerializer
 from rest_framework import status
 from django.db import transaction
 from rest_framework.parsers import JSONParser
@@ -17,26 +18,13 @@ from wine_api.settings import CACHE_TTL
 import json
 
 
-class WineList(ListView, CreateView):
+class WineList(CreateView):
     """
-    List all wines, or create a new wine.
+    Create a new wine.
     """
     queryset = Wine.objects.all()
     serializer_class = WineSerializer
     permission_classes = [AllowAny]
-
-    def get_queryset(self):
-        # Get data from cache
-        cached_data = cache.get('wine_list')
-        if cached_data is not None:
-            # If data is in cache, return it
-            returned_data = json.loads(cached_data)
-            serializer = WineSerializer(returned_data)
-            return serializer.data
-        serializer = WineSerializer(Wine.objects.all(), many=True)
-        # If data is not in cache, cache it
-        cache.set('wine_list', json.dumps(serializer.data), timeout=CACHE_TTL)
-        return serializer.data
 
     def post(self, request, *args, **kwargs):
         data = JSONParser().parse(request)
@@ -46,6 +34,41 @@ class WineList(ListView, CreateView):
             return JsonResponse(serializer.data, status=status.HTTP_201_CREATED)
         return JsonResponse(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
+
+
+class SecondWineList(SecondListView):
+    """
+    List all wines.
+    """
+    serializer_class = SecondWineSerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        page = self.request.query_params.get('page', '1')
+        page_size = self.request.query_params.get('page_size', '10')
+        page = int(page)
+        page_size = int(page_size)
+        if page < 1:
+            return HttpResponse(content="Page must be greater than 0", status=status.HTTP_400_BAD_REQUEST)
+        if page_size < 1:
+            return HttpResponse(content="Page size must be greater than 0", status=status.HTTP_400_BAD_REQUEST)
+        cache_key = f'wine_list_{page}_{page_size}'
+        # Get data from cache
+        cached_data = cache.get(cache_key)
+        if cached_data is not None:
+            # If data is in cache, return it
+            returned_data = json.loads(cached_data)
+            serializer = SecondWineSerializer(returned_data, many=True)
+            return serializer.data
+        input_data = {
+            "page": page,
+            "page_size": page_size
+        }
+        returned_data = Wine.objects.get_wines(**input_data)
+        serializer = SecondWineSerializer(returned_data, many=True)
+        # If data is not in cache, cache it
+        cache.set(cache_key, json.dumps(serializer.data), timeout=CACHE_TTL)
+        return serializer.data
 
 
 class WineDetail(RetrieveView, UpdateView, DestroyView):
