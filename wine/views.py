@@ -18,29 +18,10 @@ from wine_api.settings import CACHE_TTL
 import json
 
 
-class WineList(CreateView):
+class WineList(SecondListView, CreateView):
     """
-    Create a new wine.
+    List all wines, or create a new wine.
     """
-    queryset = Wine.objects.all()
-    serializer_class = WineSerializer
-    permission_classes = [AllowAny]
-
-    def post(self, request, *args, **kwargs):
-        data = JSONParser().parse(request)
-        serializer = WineSerializer(data=data)
-        if serializer.is_valid():
-            serializer.save()
-            return JsonResponse(serializer.data, status=status.HTTP_201_CREATED)
-        return JsonResponse(serializer.errors,
-                            status=status.HTTP_400_BAD_REQUEST)
-
-
-class SecondWineList(SecondListView):
-    """
-    List all wines.
-    """
-    serializer_class = SecondWineSerializer
     permission_classes = [AllowAny]
 
     def get_queryset(self):
@@ -52,6 +33,13 @@ class SecondWineList(SecondListView):
             return HttpResponse(content="Page must be greater than 0", status=status.HTTP_400_BAD_REQUEST)
         if page_size < 1:
             return HttpResponse(content="Page size must be greater than 0", status=status.HTTP_400_BAD_REQUEST)
+        input_data = {
+            "page": page,
+            "page_size": page_size
+        }
+        self.queryset = Wine.objects.get_wines(**input_data)
+        self.serializer_class = SecondWineSerializer
+
         cache_key = f'wine_list_{page}_{page_size}'
         # Get data from cache
         cached_data = cache.get(cache_key)
@@ -60,15 +48,22 @@ class SecondWineList(SecondListView):
             returned_data = json.loads(cached_data)
             serializer = SecondWineSerializer(returned_data, many=True)
             return serializer.data
-        input_data = {
-            "page": page,
-            "page_size": page_size
-        }
         returned_data = Wine.objects.get_wines(**input_data)
         serializer = SecondWineSerializer(returned_data, many=True)
         # If data is not in cache, cache it
         cache.set(cache_key, json.dumps(serializer.data), timeout=CACHE_TTL)
         return serializer.data
+
+    def post(self, request, *args, **kwargs):
+        self.queryset = Wine.objects.all()
+        self.serializer_class = WineSerializer
+        data = JSONParser().parse(request)
+        serializer = WineSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse(serializer.data, status=status.HTTP_201_CREATED)
+        return JsonResponse(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
 
 
 class WineDetail(RetrieveView, UpdateView, DestroyView):

@@ -47,8 +47,8 @@ Base URL: http://localhost:8000/api/v1/wines
   </tr>
 
 <tr>
-  <td rowspan="2">/list/</td>
-  <td rowspan="2"><code>/list/?page=%s&page_size=%s</code></td>
+  <td rowspan="2">/</td>
+  <td rowspan="2"><code>/?page=%s&page_size=%s</code></td>
   <td rowspan="2">GET</td>
   <td rowspan="2">If you don't give page and page_size, 10 wines in 1st page will be returned</td>
   <td>page (optional, default 1)</td>
