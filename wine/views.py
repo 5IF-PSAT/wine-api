@@ -9,9 +9,8 @@ from wine_api.views import (
 from wine.models import Wine
 from wine.serializers import WineSerializer, FilterWineSerializer, SecondWineSerializer
 from rest_framework import status
-from django.db import transaction
 from rest_framework.parsers import JSONParser
-from rest_framework.permissions import IsAdminUser, AllowAny
+from rest_framework.permissions import AllowAny
 from django.http import JsonResponse, HttpResponse
 from django.core.cache import cache
 from wine_api.settings import CACHE_TTL
@@ -22,6 +21,8 @@ class WineList(SecondListView, CreateView):
     """
     List all wines, or create a new wine.
     """
+    queryset = Wine.objects.all()
+    serializer_class = WineSerializer
     permission_classes = [AllowAny]
 
     def get_queryset(self):
