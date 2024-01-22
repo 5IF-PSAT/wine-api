@@ -24,8 +24,28 @@ class RegionManager(models.Manager):
                              created_at=datetime.datetime.now())
         return region
 
-    def get_regions(self):
-        return self.all()
+    def get_regions(self, **data):
+        page = data.get("page", 1)
+        page_size = data.get("page_size", 10)
+        if page < 1:
+            raise exceptions.ValidationError("Page must be greater than 0")
+        if page_size < 1:
+            raise exceptions.ValidationError("Page size must be greater than 0")
+        offset = (page - 1) * page_size
+        query = """
+            SELECT region.id, region."RegionID", region.created_at, region.updated_at, region."RegionName",
+            region."Country", region."Code", region."Latitude", region."Longitude"
+            FROM region
+            ORDER BY region.id ASC
+            LIMIT %s OFFSET %s
+        """
+        with connection.cursor() as cursor:
+            cursor.execute(query, [page_size, offset])
+            wines = cursor.fetchall()
+        labels = ['id', 'region_id', 'created_at', 'updated_at', 'region_name',
+                  'country', 'code', 'latitude', 'longitude']
+        result = [dict(zip(labels, row)) for row in wines]
+        return result
 
     def get_region_by_id(self, id):
         return self.filter(id=id).first()

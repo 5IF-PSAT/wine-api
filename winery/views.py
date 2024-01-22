@@ -1,12 +1,17 @@
 from wine_api.views import (
     ListView,
+    SecondListView,
     RetrieveView,
     CreateView,
     UpdateView,
     DestroyView
 )
 from winery.models import Winery
-from winery.serializers import WinerySerializer, FilterWinerySerializer
+from winery.serializers import (
+    WinerySerializer,
+    SecondWinerySerializer,
+    FilterWinerySerializer,
+)
 from rest_framework import status
 from django.db import transaction
 from rest_framework.parsers import JSONParser
@@ -17,7 +22,7 @@ from wine_api.settings import CACHE_TTL
 import json
 
 
-class WineryList(ListView, CreateView):
+class WineryList(SecondListView, CreateView):
     """
     List all wineries, or create a new winery.
     """
@@ -26,13 +31,23 @@ class WineryList(ListView, CreateView):
     permission_classes = [AllowAny]
 
     def get_queryset(self):
-        cached_data = cache.get('winery_list')
+        page = self.request.query_params.get('page', '1')
+        page_size = self.request.query_params.get('page_size', '10')
+        cache_key = f'winery_list_{page}_{page_size}'
+        cached_data = cache.get(cache_key)
         if cached_data is not None:
             returned_data = json.loads(cached_data)
-            serializer = WinerySerializer(returned_data, many=True)
+            serializer = SecondWinerySerializer(returned_data, many=True)
             return serializer.data
-        serializer = WinerySerializer(Winery.objects.all(), many=True)
-        cache.set('winery_list', json.dumps(serializer.data), timeout=CACHE_TTL)
+        input_data = {
+            "page": int(page),
+            "page_size": int(page_size)
+        }
+        self.queryset = Winery.objects.get_wineries(**input_data)
+        self.serializer_class = SecondWinerySerializer
+        returned_data = Winery.objects.get_wineries(**input_data)
+        serializer = WinerySerializer(returned_data, many=True)
+        cache.set(cache_key, json.dumps(serializer.data), timeout=CACHE_TTL)
         return serializer.data
 
     def post(self, request, *args, **kwargs):

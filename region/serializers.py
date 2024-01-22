@@ -16,6 +16,18 @@ class RegionSerializer(serializers.ModelSerializer):
         return instance
 
 
+class SecondRegionSerializer(serializers.Serializer):
+    id = serializers.IntegerField(required=False)
+    region_id = serializers.IntegerField(required=False)
+    created_at = serializers.DateTimeField(required=False)
+    updated_at = serializers.DateTimeField(required=False)
+    region_name = serializers.CharField(max_length=255, required=False)
+    country = serializers.CharField(max_length=255, required=False)
+    code = serializers.CharField(max_length=255, required=False)
+    latitude = serializers.FloatField(required=False)
+    longitude = serializers.FloatField(required=False)
+
+
 class FilterRegionSerializer(serializers.Serializer):
     id = serializers.IntegerField(required=False)
     region_id = serializers.IntegerField(required=False)

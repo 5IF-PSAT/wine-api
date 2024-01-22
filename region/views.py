@@ -1,12 +1,17 @@
 from wine_api.views import (
     ListView,
+    SecondListView,
     RetrieveView,
     CreateView,
     UpdateView,
     DestroyView
 )
 from region.models import Region
-from region.serializers import RegionSerializer, FilterRegionSerializer
+from region.serializers import (
+    RegionSerializer,
+    FilterRegionSerializer,
+    SecondRegionSerializer
+)
 from rest_framework import status
 from django.db import transaction
 from rest_framework.parsers import JSONParser
@@ -17,7 +22,7 @@ from wine_api.settings import CACHE_TTL
 import json
 
 
-class RegionList(ListView, CreateView):
+class RegionList(SecondListView, CreateView):
     """
     List all regions, or create a new region.
     """
@@ -26,16 +31,28 @@ class RegionList(ListView, CreateView):
     permission_classes = [AllowAny]
 
     def get_queryset(self):
-        cached_data = cache.get('region_list')
+        page = self.request.query_params.get('page', '1')
+        page_size = self.request.query_params.get('page_size', '10')
+        cache_key = f'region_list_{page}_{page_size}'
+        cached_data = cache.get(cache_key)
         if cached_data is not None:
             returned_data = json.loads(cached_data)
-            serializer = RegionSerializer(returned_data, many=True)
+            serializer = SecondRegionSerializer(returned_data, many=True)
             return serializer.data
-        serializer = RegionSerializer(Region.objects.all(), many=True)
-        cache.set('region_list', json.dumps(serializer.data), timeout=CACHE_TTL)
+        input_data = {
+            "page": int(page),
+            "page_size": int(page_size)
+        }
+        self.queryset = Region.objects.get_regions(**input_data)
+        self.serializer_class = SecondRegionSerializer
+        returned_data = Region.objects.get_regions(**input_data)
+        serializer = SecondRegionSerializer(returned_data, many=True)
+        cache.set(cache_key, json.dumps(serializer.data), timeout=CACHE_TTL)
         return serializer.data
 
     def post(self, request, *args, **kwargs):
+        self.queryset = Region.objects.all()
+        self.serializer_class = RegionSerializer
         data = JSONParser().parse(request)
         serializer = RegionSerializer(data=data)
         if serializer.is_valid():

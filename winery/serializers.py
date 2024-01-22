@@ -16,6 +16,15 @@ class WinerySerializer(serializers.ModelSerializer):
         return instance
 
 
+class SecondWinerySerializer(serializers.Serializer):
+    id = serializers.IntegerField(required=False)
+    winery_id = serializers.IntegerField(required=False)
+    created_at = serializers.DateTimeField(required=False)
+    updated_at = serializers.DateTimeField(required=False)
+    winery_name = serializers.CharField(max_length=255, required=False)
+    website = serializers.CharField(max_length=255, required=False)
+
+
 class FilterWinerySerializer(serializers.Serializer):
     id = serializers.IntegerField(required=False)
     winery_id = serializers.IntegerField(required=False)

@@ -22,8 +22,25 @@ class WineryManager(models.Manager):
                              created_at=datetime.datetime.now())
         return winery
 
-    def get_wineries(self):
-        return self.all()
+    def get_wineries(self, **data):
+        page = data.get("page", 1)
+        page_size = data.get("page_size", 10)
+        if page < 1:
+            raise exceptions.ValidationError("Page must be greater than 0")
+        if page_size < 1:
+            raise exceptions.ValidationError("Page size must be greater than 0")
+        offset = (page - 1) * page_size
+        query = """
+            SELECT id, "WineryID", created_at, updated_at, "WineryName", "Website" FROM winery
+            ORDER BY id ASC
+            LIMIT %s OFFSET %s
+        """
+        with connection.cursor() as cursor:
+            cursor.execute(query, [page_size, offset])
+            wineries = cursor.fetchall()
+        labels = ["id", "winery_id", "created_at", "updated_at", "winery_name", "website"]
+        result = [dict(zip(labels, winery)) for winery in wineries]
+        return result
 
     def get_winery_by_id(self, id):
         return self.filter(id=id).first()
