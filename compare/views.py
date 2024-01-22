@@ -2,13 +2,59 @@ from django.http import HttpResponse, JsonResponse
 from rest_framework.decorators import api_view, permission_classes
 from django.core.cache import cache
 from wine_api.settings import CACHE_TTL
-from compare.serializers import WineCompareSerializer
+from compare.serializers import (
+    WineCompareSerializer,
+    ListVintagesSerializer
+)
 import pandas as pd
 from wine.models import Wine
 import json
 from rest_framework.permissions import AllowAny
 from wine_api.settings import BASE_DIR
 import joblib
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def get_list_vintages(request):
+    """
+    Get the list of vintages available for comparing
+    for a given wine_id
+    :param request:
+    :return:
+    """
+    wine_id = request.query_params.get("wine_id", None)
+    if wine_id is None:
+        return HttpResponse("wine_id is a required parameter", status=400)
+    wine_id = int(wine_id)
+    wine = Wine.objects.get_wine_by_id(wine_id)
+    if wine is None:
+        return HttpResponse("wine_id must be valid", status=400)
+    # Check if the data is in the cache
+    cache_key = f'list_vintages_{wine_id}'
+    cached_data = cache.get(cache_key)
+    if cached_data is not None:
+        returned_data = json.loads(cached_data)
+        serializer = ListVintagesSerializer(returned_data)
+        return JsonResponse(serializer.data, status=200)
+    # Get the wine
+    pertinent_wine_ratings = pd.read_parquet(f'{BASE_DIR}/compare_data/pertinent_wine_ratings.parquet')
+    xwine_wine_id = wine.wine_id
+
+    filter_wine_ratings = pertinent_wine_ratings[pertinent_wine_ratings['WineID'] == xwine_wine_id]
+    list_vintages = filter_wine_ratings['Vintage'].unique().tolist()
+    # Serialize the list of vintages
+    returned_data = {
+        "wine_id": wine_id,
+        "list_vintages": list_vintages
+    }
+    # Cache the data
+    cache.set(cache_key, json.dumps(returned_data), timeout=CACHE_TTL)
+
+    serializer = ListVintagesSerializer(data=returned_data)
+    if serializer.is_valid():
+        return JsonResponse(serializer.data, status=200)
+    return HttpResponse(content='Invalid data', status=400)
 
 
 @api_view(["GET"])

@@ -1,6 +1,13 @@
 from rest_framework import serializers
 
 
+class ListVintagesSerializer(serializers.Serializer):
+    wine_id = serializers.IntegerField()
+    list_vintages = serializers.ListField(
+        child=serializers.IntegerField()
+    )
+
+
 class WineField(serializers.DictField):
     id = serializers.IntegerField()
     wine_id = serializers.IntegerField()

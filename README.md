@@ -175,8 +175,202 @@ Base URL: http://localhost:8000/api/v1/wines
 ## Region
 Base URL: http://localhost:8000/api/v1/regions
 
+<table>
+  <tr>
+    <th>Endpoint</th>
+    <th>Full path</th>
+    <th>Method</th>
+    <th>Description</th>
+    <th>Parameters</th>
+    <th>Body</th>
+  </tr>
+
+<tr>
+  <td rowspan="2">/</td>
+  <td rowspan="2"><code>/?page=%s&page_size=%s</code></td>
+  <td rowspan="2">GET</td>
+  <td rowspan="2">If you don't give page and page_size, 10 regions in 1st page will be returned</td>
+  <td>page (optional, default 1)</td>
+  <td rowspan="2"></td>
+</tr>
+  <tr>
+    <td>page_size (optional, default 10)</td>
+  </tr>
+
+<tr>
+  <td rowspan="5">/</td>
+  <td rowspan="5"><code>/</code></td>
+  <td rowspan="5">POST</td>
+  <td rowspan="5">Create a new region</td>
+  <td rowspan="5"></td>
+  <td>region_name (mandatory)</td>
+</tr>
+  <tr>
+    <td>country (mandatory)</td>
+  </tr>
+  <tr>
+    <td>code (optional)</td>
+  </tr>
+  <tr>
+    <td>latitude (optional)</td>
+  </tr>
+  <tr>
+    <td>longitude (optional)</td>
+  </tr>
+
+<tr>
+  <td>/{id}/</td>
+  <td><code>/{id}/</code></td>
+  <td>GET</td>
+  <td>Get a region by id in the database (Not X-Wines id)</td>
+  <td></td>
+  <td></td>
+</tr>
+
+<tr>
+  <td rowspan="5">/{id}/</td>
+  <td rowspan="5"><code>/{id}/</code></td>
+  <td rowspan="5">PUT</td>
+  <td rowspan="5">Update a region by id in the database (Not X-Wines id)</td>
+  <td rowspan="5"></td>
+  <td>region_name (optional)</td>
+</tr>
+  <tr>
+    <td>country (optional)</td>
+  </tr>
+  <tr>
+    <td>code (optional)</td>
+  </tr>
+  <tr>
+    <td>latitude (optional)</td>
+  </tr>
+  <tr>
+    <td>longitude (optional)</td>
+  </tr>
+
+<tr>
+  <td>/{id}/</td>
+  <td><code>/{id}/</code></td>
+  <td>DELETE</td>
+  <td>Delete a region by given id</td>
+  <td></td>
+  <td></td>
+</tr>
+
+<tr>
+  <td rowspan="7">/filter/</td>
+  <td rowspan="7"><code>/filter/?page=%s&page_size=%s...</code></td>
+  <td rowspan="7">GET</td>
+  <td rowspan="7">Filter regions by given parameters</td>
+  <td>page (optional, default 1)</td>
+  <td rowspan="7"></td>
+</tr>
+  <tr>
+    <td>page_size (optional, default 10)</td>
+  </tr>
+  <tr>
+    <td>region_name (optional)</td>
+  </tr>
+  <tr>
+    <td>country (optional)</td>
+  </tr>
+  <tr>
+    <td>radius (optional, by km, distance from the given latitude and longitude)</td>
+  </tr>
+  <tr>
+    <td>latitude (optional, latitude of the center)</td>
+  </tr>
+  <tr>
+    <td>longitude (optional, longitude of the center)</td>
+  </tr>
+
+</table>
+
 ## Winery
 Base URL: http://localhost:8000/api/v1/wineries
+
+<table>
+  <tr>
+    <th>Endpoint</th>
+    <th>Full path</th>
+    <th>Method</th>
+    <th>Description</th>
+    <th>Parameters</th>
+    <th>Body</th>
+  </tr>
+
+<tr>
+  <td rowspan="2">/</td>
+  <td rowspan="2"><code>/?page=%s&page_size=%s</code></td>
+  <td rowspan="2">GET</td>
+  <td rowspan="2">If you don't give page and page_size, 10 wineries in 1st page will be returned</td>
+  <td>page (optional, default 1)</td>
+  <td rowspan="2"></td>
+</tr>
+  <tr>
+    <td>page_size (optional, default 10)</td>
+  </tr>
+
+<tr>
+  <td rowspan="2">/</td>
+  <td rowspan="2"><code>/</code></td>
+  <td rowspan="2">POST</td>
+  <td rowspan="2">Create a new winery</td>
+  <td rowspan="2"></td>
+  <td>winery_name (mandatory)</td>
+</tr>
+  <tr>
+    <td>website (optional)</td>
+  </tr>
+
+<tr>
+  <td>/{id}/</td>
+  <td><code>/{id}/</code></td>
+  <td>GET</td>
+  <td>Get a winery by id in the database (Not X-Wines id)</td>
+  <td></td>
+  <td></td>
+</tr>
+
+<tr>
+  <td rowspan="2">/{id}/</td>
+  <td rowspan="2"><code>/{id}/</code></td>
+  <td rowspan="2">PUT</td>
+  <td rowspan="2">Update a winery by id in the database (Not X-Wines id)</td>
+  <td rowspan="2"></td>
+  <td>winery_name (optional)</td>
+</tr>
+  <tr>
+    <td>website (optional)</td>
+  </tr>
+
+<tr>
+  <td>/{id}/</td>
+  <td><code>/{id}/</code></td>
+  <td>DELETE</td>
+  <td>Delete a winery by given id</td>
+  <td></td>
+  <td></td>
+</tr>
+
+<tr>
+  <td rowspan="4">/filter/</td>
+  <td rowspan="4"><code>/filter/?page=%s&page_size=%s...</code></td>
+  <td rowspan="4">GET</td>
+  <td rowspan="4">Filter wineries by given parameters</td>
+  <td>page (optional, default 1)</td>
+  <td rowspan="4"></td>
+</tr>
+  <tr>
+    <td>page_size (optional, default 10)</td>
+  </tr>
+  <tr>
+    <td>winery_name (optional)</td>
+  </tr>
+  <tr>
+    <td>website (optional)</td>
+  </tr>
+</table>
 
 ## Compare
 Base URL: http://localhost:8000/api/v1/compare
@@ -190,6 +384,15 @@ Base URL: http://localhost:8000/api/v1/compare
     <th>Parameters</th>
     <th>Body</th>
   </tr>
+
+<tr>
+  <td>/list_vintages/</td>
+  <td><code>/list_vintages/?wine_id=%s</code></td>
+  <td>GET</td>
+  <td>Get a list of vintages of a wine</td>
+  <td>wine_id (mandatory, <code>wine_id</code> in the DB, not X-Wines ID)</td>
+  <td></td>
+</tr>
 
 <tr>
   <td rowspan="3">/compare_wine/</td>
