@@ -11,7 +11,8 @@ from wine.models import Wine
 import json
 from rest_framework.permissions import AllowAny
 from wine_api.settings import BASE_DIR
-import joblib
+from likewines.model import CompareModel
+from likewines.processor import CompareDataProcessor
 
 
 @api_view(["GET"])
@@ -83,48 +84,43 @@ def compare_wine(request):
         serializer = WineCompareSerializer(returned_data)
         return JsonResponse(serializer.data, status=200)
     # Get the wine
-    pertinent_wine_ratings = pd.read_parquet(f'{BASE_DIR}/compare_data/pertinent_wine_ratings.parquet')
-    pertinent_ratings_non_null = pd.read_parquet(f'{BASE_DIR}/compare_data/pertinent_ratings_non_null.parquet')
-    aggregated_doc_vector = pd.read_csv(f'{BASE_DIR}/compare_data/aggregated_doc_vector.csv')
-    normalized_wine_data = pd.read_parquet(f'{BASE_DIR}/compare_data/normalized_wine_data.parquet')
+    path_pertinent_wine_ratings = f'{BASE_DIR}/compare_data/pertinent_wine_ratings.parquet'
+    path_normalized_wine_data = f'{BASE_DIR}/compare_data/normalized_wine_data.parquet'
+    path_pertinent_ratings_non_null = f'{BASE_DIR}/compare_data/pertinent_ratings_non_null.parquet'
+    path_aggregated_doc_vector = f'{BASE_DIR}/compare_data/aggregated_doc_vector.csv'
 
     wine = Wine.objects.get_wine_by_id(wine_id)
     xwine_wine_id = wine.wine_id
 
-    checked_exist_df = pertinent_wine_ratings[(pertinent_wine_ratings['WineID'] == xwine_wine_id) &
-                                              (pertinent_wine_ratings['Vintage'] == vintage)]
-    if checked_exist_df.empty:
-        return HttpResponse("wine_id and vintage must be valid", status=400)
+    # Initialize the model and the processor
+    data_processor = CompareDataProcessor(path_pertinent_wine_ratings=path_pertinent_wine_ratings,
+                                          path_normalized_wine_data=path_normalized_wine_data,
+                                          path_pertinent_ratings_non_null=path_pertinent_ratings_non_null,
+                                          path_aggregated_doc_vector=path_aggregated_doc_vector)
 
-    reference_wine_composition_and_weather = normalized_wine_data[(normalized_wine_data['WineID'] == xwine_wine_id) &
-                                                                  (normalized_wine_data['Vintage'] == vintage)]
-    checked_review_df = pertinent_ratings_non_null[(pertinent_ratings_non_null['WineID'] == xwine_wine_id) &
-                                                   (pertinent_ratings_non_null['Vintage'] == vintage)]
-    wine_text_review_vec = aggregated_doc_vector.copy()
-    have_text_review = False
-    if not checked_review_df.empty:
+    input_wine_composition_and_weather, input_wine_text_review = data_processor.process_data(xwine_wine_id, vintage)
+
+    # Load the model
+    path_wine_composition_weather_tree = f'{BASE_DIR}/model/wine_composition_weather_tree.joblib'
+    path_wine_text_review_tree = f'{BASE_DIR}/model/wine_text_review_tree.joblib'
+
+    compare_model = CompareModel(path_wine_composition_weather_tree=path_wine_composition_weather_tree,
+                                 path_wine_text_review_tree=path_wine_text_review_tree)
+
+    normalized_wine_data = data_processor.normalized_wine_data
+    aggregated_doc_vector = data_processor.aggregated_doc_vector
+
+    # Query the data
+    if input_wine_text_review is None:
+        have_text_review = False
+        dist_composition_weather, ind_composition_weather, dist_text_review, ind_text_review = compare_model.query_data(
+            input_wine_composition_and_weather, len_comp_weather=len(normalized_wine_data)
+        )
+    else:
         have_text_review = True
-        reference_wine_text_review = wine_text_review_vec[(wine_text_review_vec['WineID'] == xwine_wine_id) &
-                                                          (wine_text_review_vec['Vintage'] == vintage)]
-
-    input_wine_composition_and_weather = reference_wine_composition_and_weather.drop(['WineID', 'Vintage', 'WineName'],
-                                                                                     axis=1).to_numpy().reshape(1, -1)
-
-    if have_text_review:
-        input_wine_text_review = reference_wine_text_review.drop(['WineID', 'Vintage'], axis=1).to_numpy().reshape(1, -1)
-
-    # Load the KD Tree
-    wine_composition_weather_tree = joblib.load(f'{BASE_DIR}/model/wine_composition_weather_tree.joblib')
-    wine_text_review_tree = joblib.load(f'{BASE_DIR}/model/wine_text_review_tree.joblib')
-
-    # Query the KD Tree, get the distances and indices of the nearest neighbors
-    dist_composition_weather, ind_composition_weather = wine_composition_weather_tree.query(
-        input_wine_composition_and_weather, k=len(normalized_wine_data)
-    )
-
-    if have_text_review:
-        dist_text_review, ind_text_review = wine_text_review_tree.query(
-            input_wine_text_review, k=len(wine_text_review_vec)
+        dist_composition_weather, ind_composition_weather, dist_text_review, ind_text_review = compare_model.query_data(
+            input_wine_composition_and_weather, len_comp_weather=len(normalized_wine_data),
+            input_wine_text_review=input_wine_text_review, len_text_review=len(aggregated_doc_vector)
         )
 
     # create a dictionary with ind as key and dist as value
@@ -136,16 +132,17 @@ def compare_wine(request):
     normalized_wine_name_data = normalized_wine_data[['WineID', 'Vintage', 'WineName']]
     normalized_wine_name_data['distance_no_text'] = normalized_wine_data.index.map(dict_composition_weather_wine)
 
-    wine_name_data = wine_text_review_vec[['WineID', 'Vintage']]
+    wine_name_data = aggregated_doc_vector[['WineID', 'Vintage']]
     if have_text_review:
-        wine_name_data['distance_text'] = wine_text_review_vec.index.map(dict_text_review_wine)
+        wine_name_data['distance_text'] = aggregated_doc_vector.index.map(dict_text_review_wine)
 
     # Merge the datasets based on 'Name' and 'Age'
     merged_wine_data = pd.merge(normalized_wine_name_data, wine_name_data, on=['WineID', 'Vintage'], how='left')
 
     if have_text_review:
         # Fill null values with 0 before adding 'ScoreDay1' and 'ScoreDay2'
-        merged_wine_data['distance'] = merged_wine_data['distance_no_text'].fillna(0) + merged_wine_data['distance_text'].fillna(0)
+        merged_wine_data['distance'] = merged_wine_data['distance_no_text'].fillna(0) + merged_wine_data[
+            'distance_text'].fillna(0)
 
         # Drop the redundant 'ScoreDay1' and 'ScoreDay2' columns if needed
         merged_wine_data = merged_wine_data.drop(['distance_no_text', 'distance_text'], axis=1)

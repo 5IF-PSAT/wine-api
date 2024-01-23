@@ -1,4 +1,4 @@
-from django.http import HttpResponse, JsonResponse, FileResponse
+from django.http import HttpResponse, JsonResponse
 from rest_framework.decorators import api_view, permission_classes
 from django.core.cache import cache
 from wine_api.settings import CACHE_TTL
@@ -14,9 +14,8 @@ from wine.models import Wine
 import json
 from rest_framework.permissions import AllowAny
 from wine_api.settings import BASE_DIR
-import joblib
-import numpy as np
-from tensorflow.keras.models import load_model
+from likewines.processor import PredictDataProcessor
+from likewines.model import PredictModel
 
 
 @api_view(['GET'])
@@ -129,87 +128,41 @@ def predict_rating(request):
         returned_data = json.loads(cached_response)
         serializer = RatingSerializer(returned_data)
         return JsonResponse(serializer.data, status=200)
-    # Config
-    h = 12
-
-    list_acidity = [wine.acidity] * h
-    list_ABV = [wine.abv] * h
-    list_body = [wine.body] * h
-
-    # Get XWine region_id of the wine
-    region = wine.region
-    xwine_region_id = region.region_id
+    # Configure the batch_vintage
+    batch_vintage = [batch_vintage]
 
     # Read forecast data
-    forecast_df = pd.read_parquet(f'{BASE_DIR}/predict_data/forecast_agg_monthly.parquet')
-    # Add timestamp column
-    forecast_df['timestamp'] = pd.to_datetime(forecast_df[['year', 'month']].assign(DAY=1))
-    # Filter data by region_id and year
-    forecast_df = forecast_df[(forecast_df['RegionID'] == xwine_region_id) & (forecast_df['year'] == batch_vintage)]
+    path_forecast_df = f'{BASE_DIR}/predict_data/forecast_agg_monthly.parquet'
 
-    # Get and normalize data
-    column_minmax = ['ABV', 'Body', 'Acidity',
-                     'avg_temperature', 'avg_sunshine_duration',
-                     'avg_precipitation', 'avg_humidity',
-                     'avg_soil_temperature', 'avg_soil_moisture']
-    minmax_df = pd.DataFrame(columns=column_minmax)
+    # Initialize the data processor
+    data_processor = PredictDataProcessor(
+        wine=wine,
+        rating_year=rating_year,
+        path_forecast_df=path_forecast_df,
+        batch_vintage=batch_vintage,
+        path_minmax_scaler=f'{BASE_DIR}/model/minmax_scaler.save',
+        path_standard_scaler=f'{BASE_DIR}/model/std_scaler.save',
+    )
 
-    minmax_df['ABV'] = list_ABV
-    minmax_df['Body'] = list_body
-    minmax_df['Acidity'] = list_acidity
-    minmax_df['avg_temperature'] = forecast_df['avg_temperature'].tolist()
-    minmax_df['avg_sunshine_duration'] = forecast_df['avg_sunshine_duration'].tolist()
-    minmax_df['avg_precipitation'] = forecast_df['avg_precipitation'].tolist()
-    minmax_df['avg_humidity'] = forecast_df['avg_humidity'].tolist()
-    minmax_df['avg_soil_temperature'] = forecast_df['avg_soil_temperature'].tolist()
-    minmax_df['avg_soil_moisture'] = forecast_df['avg_soil_moisture'].tolist()
+    # Process the data
+    time_series_input, numerical_input = data_processor.process_data()
 
-    acid_dict = {'Low': 1, 'Medium': 2, 'High': 3}
-    body_dict = {'Light-bodied': 1, 'Medium-bodied': 2, 'Full-bodied': 3, 'Very full-bodied': 4}
-
-    minmax_df['Acidity'] = minmax_df['Acidity'].map(acid_dict)
-    minmax_df['Body'] = minmax_df['Body'].map(body_dict)
-
-    list_delta_time_rating = [rating_year - batch_vintage] * h
-
-    # load minmax_scaler
-    with open(f'{BASE_DIR}/model/minmax_scaler.save', 'rb') as f:
-        minmax_scaler = joblib.load(f)
-
-    # load standard_scaler
-    with open(f'{BASE_DIR}/model/std_scaler.save', 'rb') as f:
-        standard_scaler = joblib.load(f)
-
-    scaled_minmax_df = minmax_scaler.transform(minmax_df)
-    scaled_list_delta_time_rating = standard_scaler.transform(np.array(list_delta_time_rating).reshape(-1, 1))
-
-    time_series_array = np.array([scaled_minmax_df[:, 3][0:12],
-                                  scaled_minmax_df[:, 4][0:12],
-                                  scaled_minmax_df[:, 5][0:12],
-                                  scaled_minmax_df[:, 6][0:12],
-                                  scaled_minmax_df[:, 7][0:12],
-                                  scaled_minmax_df[:, 8][0:12]])
-    numerical_array = np.array([scaled_minmax_df[:, 0][0], scaled_minmax_df[:, 1][0],
-                                scaled_minmax_df[:, 2][0],
-                                scaled_list_delta_time_rating[0][0]])
-    list_all = [(time_series_array, numerical_array)]
-
-    # Input data for CNN model
-    time_series_input = np.array([element[0] for element in list_all])
-    time_series_input = time_series_input.reshape(time_series_input.shape[0], time_series_input.shape[1],
-                                                  time_series_input.shape[2], 1)
-    numerical_input = np.array([element[1] for element in list_all])
-    cnn_model = load_model(f'{BASE_DIR}/model/cnn_model.h5')
-
-    # Make prediction
-    predictions = cnn_model.predict([time_series_input, numerical_input])
+    # Initialize the model
+    cnn_model = PredictModel(
+        path_cnn_model=f'{BASE_DIR}/model/cnn_model.h5',
+    )
+    list_predict_rating = cnn_model.predict(
+        time_series_input=time_series_input,
+        numerical_input=numerical_input,
+    )
+    prediction = list_predict_rating[0]
 
     # Return the prediction
     returned_data = {
         'wine_id': wine_id,
-        'batch_vintage': batch_vintage,
+        'batch_vintage': batch_vintage[0],
         'rating_year': rating_year,
-        'predict_rating': float(predictions[0][0])
+        'predict_rating': prediction
     }
 
     # Cache the response
@@ -250,17 +203,11 @@ def predict_all_rating(request):
         serializer = ListRatingSerializer(returned_data)
         return JsonResponse(serializer.data, status=200)
 
-    # Get XWine region_id of the wine
-    region = wine.region
-    xwine_region_id = region.region_id
+    # Get XWine wine_id of the wine
     xwine_wine_id = wine.wine_id
 
     # Read forecast data
-    forecast_df = pd.read_parquet(f'{BASE_DIR}/predict_data/forecast_agg_monthly.parquet')
-    # Add timestamp column
-    forecast_df['timestamp'] = pd.to_datetime(forecast_df[['year', 'month']].assign(DAY=1))
-    # Filter data by region_id
-    forecast_df = forecast_df[forecast_df['RegionID'] == xwine_region_id]
+    path_forecast_df = f'{BASE_DIR}/predict_data/forecast_agg_monthly.parquet'
 
     # Get Vintage to predict
     wine_ratings = pd.read_parquet(f'{BASE_DIR}/db_data/wine_ratings.parquet')
@@ -268,73 +215,28 @@ def predict_all_rating(request):
     batch_vintage = filter_wine_ratings['Vintage'].tolist()
     list_actual_rating = filter_wine_ratings['AverageRating'].tolist()
 
-    # Get and normalize data
-    length = len(batch_vintage) * 12
-    column_minmax = ['ABV', 'Body', 'Acidity',
-                     'avg_temperature', 'avg_sunshine_duration',
-                     'avg_precipitation', 'avg_humidity',
-                     'avg_soil_temperature', 'avg_soil_moisture']
-    minmax_df = pd.DataFrame(columns=column_minmax)
-    minmax_df['ABV'] = [wine.abv] * length
-    minmax_df['Body'] = [wine.body] * length
-    minmax_df['Acidity'] = [wine.acidity] * length
-    minmax_df['avg_temperature'] = forecast_df[forecast_df['year'].isin(batch_vintage)]['avg_temperature'].tolist()
-    minmax_df['avg_sunshine_duration'] = forecast_df[forecast_df['year'].isin(batch_vintage)]['avg_sunshine_duration'].tolist()
-    minmax_df['avg_precipitation'] = forecast_df[forecast_df['year'].isin(batch_vintage)]['avg_precipitation'].tolist()
-    minmax_df['avg_humidity'] = forecast_df[forecast_df['year'].isin(batch_vintage)]['avg_humidity'].tolist()
-    minmax_df['avg_soil_temperature'] = forecast_df[forecast_df['year'].isin(batch_vintage)]['avg_soil_temperature'].tolist()
-    minmax_df['avg_soil_moisture'] = forecast_df[forecast_df['year'].isin(batch_vintage)]['avg_soil_moisture'].tolist()
+    # Initialize the data processor
+    data_processor = PredictDataProcessor(
+        wine=wine,
+        rating_year=rating_year,
+        path_forecast_df=path_forecast_df,
+        batch_vintage=batch_vintage,
+        path_minmax_scaler=f'{BASE_DIR}/model/minmax_scaler.save',
+        path_standard_scaler=f'{BASE_DIR}/model/std_scaler.save',
+    )
 
-    acid_dict = {'Low': 1, 'Medium': 2, 'High': 3}
-    body_dict = {'Light-bodied': 1, 'Medium-bodied': 2, 'Full-bodied': 3, 'Very full-bodied': 4}
+    # Process the data
+    time_series_input, numerical_input = data_processor.process_data()
 
-    minmax_df['Acidity'] = minmax_df['Acidity'].map(acid_dict)
-    minmax_df['Body'] = minmax_df['Body'].map(body_dict)
-    # Duplicate each element in batch_vintage 12 times
-    list_vintage = np.repeat(batch_vintage, 12)
-    list_delta_time_rating = np.array(rating_year - np.array(list_vintage))
-    # Convert list_delta_time_rating to list
-    list_delta_time_rating = list_delta_time_rating.tolist()
+    # Initialize the model
+    model = PredictModel(
+        path_cnn_model=f'{BASE_DIR}/model/cnn_model.h5',
+    )
+    list_predict_rating = model.predict(
+        time_series_input=time_series_input,
+        numerical_input=numerical_input,
+    )
 
-    # load minmax_scaler
-    with open(f'{BASE_DIR}/model/minmax_scaler.save', 'rb') as f:
-        minmax_scaler = joblib.load(f)
-
-    # load standard_scaler
-    with open(f'{BASE_DIR}/model/std_scaler.save', 'rb') as f:
-        standard_scaler = joblib.load(f)
-
-    scaled_minmax_df = minmax_scaler.transform(minmax_df)
-    scaled_list_delta_time_rating = standard_scaler.transform(np.array(list_delta_time_rating).reshape(-1, 1))
-
-    list_all = []
-    for i in range(0, length, 12):
-        time_series_array = np.array([scaled_minmax_df[:, 3][i:i + 12],
-                                      scaled_minmax_df[:, 4][i:i + 12],
-                                      scaled_minmax_df[:, 5][i:i + 12],
-                                      scaled_minmax_df[:, 6][i:i + 12],
-                                      scaled_minmax_df[:, 7][i:i + 12],
-                                      scaled_minmax_df[:, 8][i:i + 12]])
-        numerical_array = np.array([scaled_minmax_df[:, 0][i], scaled_minmax_df[:, 1][i],
-                                    scaled_minmax_df[:, 2][i],
-                                    scaled_list_delta_time_rating[i][0]])
-        list_all.append((time_series_array, numerical_array))
-
-    # Input data for CNN model
-    time_series_input = np.array([element[0] for element in list_all])
-    time_series_input = time_series_input.reshape(time_series_input.shape[0], time_series_input.shape[1],
-                                                  time_series_input.shape[2], 1)
-    numerical_input = np.array([element[1] for element in list_all])
-
-    cnn_model = load_model(f'{BASE_DIR}/model/cnn_model.h5')
-
-    # Make prediction
-    predictions = cnn_model.predict([time_series_input, numerical_input])
-
-    # Return the prediction
-    list_predict_rating = predictions.tolist()
-    list_predict_rating = [item for sublist in list_predict_rating for item in sublist]
-    list_predict_rating = [float(item) for item in list_predict_rating]
     returned_data = {
         'wine_id': wine_id,
         'rating_year': rating_year,
